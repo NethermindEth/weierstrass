@@ -82,6 +82,46 @@ func TestPointAddition(t *testing.T) {
 	}
 }
 
+func TestScalarMultiplication(t *testing.T) {
+	jsonFile, err := os.Open("scalar_mul_test.json")
+	if err != nil {
+		t.Fatalf("Failed to open JSON file: %v", err)
+	}
+	defer jsonFile.Close()
+
+	var testData ScalarMulTestData
+	decoder := json.NewDecoder(jsonFile)
+	if err := decoder.Decode(&testData); err != nil {
+		t.Fatalf("Failed to decode JSON: %v", err)
+	}
+
+	// Create curve with parameters from JSON
+	curve := weierstrass.NewCurve(
+		big.NewInt(testData.A),
+		big.NewInt(testData.B),
+		big.NewInt(testData.P),
+	)
+
+	// Test each scalar multiplication case
+	for i, test := range testData.Tests {
+		P := weierstrass.NewPoint(big.NewInt(test.P.X), big.NewInt(test.P.Y))
+		k := big.NewInt(test.K)
+		expectedR := weierstrass.NewPoint(big.NewInt(test.R.X), big.NewInt(test.R.Y))
+
+		// Perform scalar multiplication using your implementation
+		calculatedR := curve.ScalarMulPoint(P, k)
+
+		// Compare calculated R with expected R
+		if !expectedR.Eq(calculatedR) {
+			t.Errorf("Test case %d failed: k * P != R", i)
+			t.Errorf("P: %v", P)
+			t.Errorf("k: %v", k)
+			t.Errorf("Expected R: %v", expectedR)
+			t.Errorf("Calculated R: %v", calculatedR)
+		}
+	}
+}
+
 type PointCoords struct {
 	X int64 `json:"x"`
 	Y int64 `json:"y"`
@@ -105,5 +145,18 @@ type PointAddTestData struct {
 type AddTest struct {
 	P PointCoords `json:"P"`
 	Q PointCoords `json:"Q"`
+	R PointCoords `json:"R"`
+}
+
+type ScalarMulTestData struct {
+	P     int64           `json:"p"`
+	A     int64           `json:"a"`
+	B     int64           `json:"b"`
+	Tests []ScalarMulTest `json:"tests"`
+}
+
+type ScalarMulTest struct {
+	P PointCoords `json:"P"`
+	K int64       `json:"k"`
 	R PointCoords `json:"R"`
 }

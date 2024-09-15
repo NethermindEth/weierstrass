@@ -98,12 +98,37 @@ func (c Curve) AddPoints(p, q Point) Point {
 	return c.addDifferentPoints(p, q)
 }
 
+// ScalarMulPoint multiplies point P on curve with some scalar k; kP
+// Implemented using Montgomery ladder algorithm as described in
+// https://www.matthieurivain.com/files/jcen11b.pdf (Algorithm 3, page 4)
+//
+// IMPORTANT!!!: works, but not prod ready, not only  not optimized
+// But not side-channel attack resistant
+func (c Curve) ScalarMulPoint(p Point, k *big.Int) Point {
+	r0 := Infinity.Clone()
+	r1 := p.Clone()
+
+	for i := k.BitLen() - 1; i >= 0; i-- {
+		// R1−b ← R1−b + Rb
+		// 2Rb
+		if k.Bit(i) == 0 {
+			r1 = c.AddPoints(r1, r0)
+			r0 = c.DoublePoint(r0)
+		} else {
+			r0 = c.AddPoints(r0, r1)
+			r1 = c.DoublePoint(r1)
+		}
+	}
+
+	return r0
+}
+
 // addDifferentPoints Adds two points P and Q to get point R
 // when P != Q
-func (c Curve) addDifferentPoints(P, Q Point) Point {
+func (c Curve) addDifferentPoints(p, q Point) Point {
 	lambda := new(big.Int)
-	numerator := new(big.Int).Sub(Q.y, P.y)   // y2 - y1
-	denominator := new(big.Int).Sub(Q.x, P.x) // x2 - x1
+	numerator := new(big.Int).Sub(q.y, p.y)   // y2 - y1
+	denominator := new(big.Int).Sub(q.x, p.x) // x2 - x1
 	denominatorInv := new(big.Int).ModInverse(denominator, c.p)
 
 	if denominatorInv == nil {
@@ -115,13 +140,13 @@ func (c Curve) addDifferentPoints(P, Q Point) Point {
 	lambda.Mod(lambda, c.p)
 
 	xr := new(big.Int).Mul(lambda, lambda) // λ^2
-	xr.Sub(xr, P.x)                        // λ^2 - x1
-	xr.Sub(xr, Q.x)                        // λ^2 - x1 - x2
+	xr.Sub(xr, p.x)                        // λ^2 - x1
+	xr.Sub(xr, q.x)                        // λ^2 - x1 - x2
 	xr.Mod(xr, c.p)
 
-	yr := new(big.Int).Sub(P.x, xr) // x1 - x3
+	yr := new(big.Int).Sub(p.x, xr) // x1 - x3
 	yr.Mul(lambda, yr)              // λ(x1 - x3)
-	yr.Sub(yr, P.y)                 // λ(x1 - x3) - y1
+	yr.Sub(yr, p.y)                 // λ(x1 - x3) - y1
 	yr.Mod(yr, c.p)
 
 	return Point{x: xr, y: yr}

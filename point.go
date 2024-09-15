@@ -25,6 +25,14 @@ func NewPoint(x, y *big.Int) Point {
 	return Point{x, y}
 }
 
+func (p Point) Clone() Point {
+	if p.Eq(Infinity) {
+		return Point{}
+	}
+
+	return NewPoint(new(big.Int).Set(p.x), new(big.Int).Set(p.y))
+}
+
 func (p Point) String() string {
 	return fmt.Sprintf("(%d, %d)", p.x, p.y)
 }

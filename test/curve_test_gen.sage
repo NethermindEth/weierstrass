@@ -97,3 +97,26 @@ point_add_test_json = json.dumps(point_add_test_data, indent=2)
 point_add_test_file_path = os.path.expanduser('~/source/weierstrass/test/point_add_test.json')
 with open(point_add_test_file_path, 'w') as file:
     file.write(point_add_test_json)
+
+
+scalar_mul_tests = []
+for _ in range(N):
+    P = E.random_point()
+    k = randint(1, 100000)  # Random scalar between 1 and p-1
+    R = k * P
+    scalar_mul_tests.append({
+        "P": point_to_coords(P),
+        "k": int(k),
+        "R": point_to_coords(R)
+    })
+
+scalar_mul_test_data = {
+    "p": int(p),
+    "a": int(a),
+    "b": int(b),
+    "tests": scalar_mul_tests
+}
+scalar_mul_test_json = json.dumps(scalar_mul_test_data, indent=2)
+scalar_mul_test_file_path = os.path.expanduser('~/source/weierstrass/test/scalar_mul_test.json')
+with open(scalar_mul_test_file_path, 'w') as file:
+    file.write(scalar_mul_test_json)
