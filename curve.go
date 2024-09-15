@@ -20,8 +20,8 @@ func (c Curve) String() string {
 	return fmt.Sprintf("y^2 = x^3 + %d*x + %d mod %d", c.a, c.b, c.p)
 }
 
-// Point P(x,y) is on curve c if equation y^2 = x^3 + ax + b mod p holds
-func (c Curve) IsOnCurve(p Point) bool {
+// IsPointOnCurve P(x,y) is on curve c if equation y^2 = x^3 + ax + b mod p holds
+func (c Curve) IsPointOnCurve(p Point) bool {
 	left := new(big.Int).Mul(p.y, p.y) // y^2
 	left.Mod(left, c.p)                // y^2 mod p
 
@@ -31,4 +31,98 @@ func (c Curve) IsOnCurve(p Point) bool {
 	right.Mod(right, c.p)                              // (x^3 + ax + b) mod p
 
 	return left.Cmp(right) == 0
+}
+
+// DoublePoint doubles point P on curve C
+func (c Curve) DoublePoint(p Point) Point {
+	numerator := new(big.Int).Mul(p.x, p.x) // x1^2
+	numerator.Mul(numerator, big.NewInt(3)) // 3x1^2
+	numerator.Add(numerator, c.a)           // 3x1^2 + a
+
+	denominator := new(big.Int).Mul(p.y, big.NewInt(2)) // 2y1
+	denominatorInv := new(big.Int).ModInverse(denominator, c.p)
+
+	if denominatorInv == nil {
+		// Division by zero, result is point at infinity.
+		return Infinity
+	}
+
+	lambda := new(big.Int).Mul(numerator, denominatorInv) // (3x1^2 + a) / 2y1
+	lambda.Mod(lambda, c.p)
+
+	xr := new(big.Int).Mul(lambda, lambda)           // λ^2
+	xr.Sub(xr, new(big.Int).Mul(p.x, big.NewInt(2))) // λ^2 - 2x1
+	xr.Mod(xr, c.p)
+
+	yr := new(big.Int).Sub(p.x, xr) // x1 - x3
+	yr.Mul(lambda, yr)              // λ(x1 - x3)
+	yr.Sub(yr, p.y)                 // λ(x1 - x3) - y1
+	yr.Mod(yr, c.p)
+
+	return NewPoint(xr, yr)
+}
+
+// NegPoint Per definition Negating point on Weierstrass curve is just setting its
+// y coordinate to -y
+func (c Curve) NegPoint(p Point) Point {
+	negY := new(big.Int).Neg(p.y)
+
+	// Modding since in finite Field Fp
+	negY.Mod(negY, c.p)
+
+	return NewPoint(p.x, negY)
+}
+
+// AddPoints adds two points P and Q on curve C to get resulting point R
+func (c Curve) AddPoints(p, q Point) Point {
+	// Infinity is Identity element, denoted by 0
+	// Let P = 0, then P + Q = 0 + Q = 0
+	if p == Infinity {
+		return q
+	}
+
+	if q == Infinity {
+		return p
+	}
+
+	// Let Q = -P, then P + Q = P + (-P) = P - P = 0
+	if q.Eq(c.NegPoint(p)) {
+		return Infinity
+	}
+
+	// Let Q = P, then P + Q = P + P = 2P
+	if p.Eq(q) {
+		return c.DoublePoint(p)
+	}
+
+	return c.addDifferentPoints(p, q)
+}
+
+// addDifferentPoints Adds two points P and Q to get point R
+// when P != Q
+func (c Curve) addDifferentPoints(P, Q Point) Point {
+	lambda := new(big.Int)
+	numerator := new(big.Int).Sub(Q.y, P.y)   // y2 - y1
+	denominator := new(big.Int).Sub(Q.x, P.x) // x2 - x1
+	denominatorInv := new(big.Int).ModInverse(denominator, c.p)
+
+	if denominatorInv == nil {
+		// Division by zero, result is point at infinity.
+		return Infinity
+	}
+
+	lambda.Mul(numerator, denominatorInv)
+	lambda.Mod(lambda, c.p)
+
+	xr := new(big.Int).Mul(lambda, lambda) // λ^2
+	xr.Sub(xr, P.x)                        // λ^2 - x1
+	xr.Sub(xr, Q.x)                        // λ^2 - x1 - x2
+	xr.Mod(xr, c.p)
+
+	yr := new(big.Int).Sub(P.x, xr) // x1 - x3
+	yr.Mul(lambda, yr)              // λ(x1 - x3)
+	yr.Sub(yr, P.y)                 // λ(x1 - x3) - y1
+	yr.Mod(yr, c.p)
+
+	return Point{x: xr, y: yr}
 }
