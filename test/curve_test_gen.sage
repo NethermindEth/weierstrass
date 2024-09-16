@@ -120,3 +120,31 @@ scalar_mul_test_json = json.dumps(scalar_mul_test_data, indent=2)
 scalar_mul_test_file_path = os.path.expanduser('~/source/weierstrass/test/scalar_mul_test.json')
 with open(scalar_mul_test_file_path, 'w') as file:
     file.write(scalar_mul_test_json)
+
+
+scalar_mul_add_tests = []
+for _ in range(N):
+    P = E.random_point()
+    Q = E.random_point()
+    k = randint(1, 100000)  # Random scalar between 1 and 100_000
+    u = randint(1, 100000)  # Random scalar between 1 and 100_000
+    R = k * P + u * Q
+    scalar_mul_add_tests.append({
+        "P": point_to_coords(P),
+        "k": int(k),
+        "Q": point_to_coords(Q),
+        "u": int(u),
+        "R": point_to_coords(R)
+    })
+
+scalar_mul_add_test_data = {
+    "p": int(p),
+    "a": int(a),
+    "b": int(b),
+    "tests": scalar_mul_add_tests
+}
+
+scalar_mul_add_test_json = json.dumps(scalar_mul_add_test_data, indent=2)
+scalar_mul_add_test_file_path = os.path.expanduser('~/source/weierstrass/test/scalar_mul_add_test.json')
+with open(scalar_mul_add_test_file_path, 'w') as file:
+    file.write(scalar_mul_add_test_json)

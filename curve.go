@@ -123,6 +123,15 @@ func (c Curve) ScalarMulPoint(p Point, k *big.Int) Point {
 	return r0
 }
 
+// ScalarMulAddPoints calculates R = kP + uQ
+// Where P, Q and R are points on curve and k, u are scalars
+func (c Curve) ScalarMulAddPoints(p, q Point, k, u *big.Int) Point {
+	kp := c.ScalarMulPoint(p, k)
+	kq := c.ScalarMulPoint(q, u)
+
+	return c.AddPoints(kp, kq)
+}
+
 // addDifferentPoints Adds two points P and Q to get point R
 // when P != Q
 func (c Curve) addDifferentPoints(p, q Point) Point {

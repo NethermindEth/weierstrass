@@ -122,6 +122,51 @@ func TestScalarMultiplication(t *testing.T) {
 	}
 }
 
+func TestScalarMulAddPoints(t *testing.T) {
+	// Load test data from JSON file
+	jsonFile, err := os.Open("scalar_mul_add_test.json")
+	if err != nil {
+		t.Fatalf("Failed to open JSON file: %v", err)
+	}
+	defer jsonFile.Close()
+
+	var testData CombinedScalarTestData
+	decoder := json.NewDecoder(jsonFile)
+	if err := decoder.Decode(&testData); err != nil {
+		t.Fatalf("Failed to decode JSON: %v", err)
+	}
+
+	// Create curve with parameters from JSON
+	curve := weierstrass.NewCurve(
+		big.NewInt(testData.A),
+		big.NewInt(testData.B),
+		big.NewInt(testData.P),
+	)
+
+	// Test each combined scalar multiplication and addition case
+	for i, test := range testData.Tests {
+		P := weierstrass.NewPoint(big.NewInt(test.P.X), big.NewInt(test.P.Y))
+		Q := weierstrass.NewPoint(big.NewInt(test.Q.X), big.NewInt(test.Q.Y))
+		expectedR := weierstrass.NewPoint(big.NewInt(test.R.X), big.NewInt(test.R.Y))
+		k := big.NewInt(test.K)
+		u := big.NewInt(test.U)
+
+		// Perform combined scalar multiplication and addition using your implementation
+		calculatedR := curve.ScalarMulAddPoints(P, Q, k, u)
+
+		// Compare calculated R with expected R
+		if !expectedR.Eq(calculatedR) {
+			t.Errorf("Test case %d failed: kP + uQ != R", i)
+			t.Errorf("P: %v", P)
+			t.Errorf("k: %v", k)
+			t.Errorf("Q: %v", Q)
+			t.Errorf("u: %v", u)
+			t.Errorf("Expected R: %v", expectedR)
+			t.Errorf("Calculated R: %v", calculatedR)
+		}
+	}
+}
+
 type PointCoords struct {
 	X int64 `json:"x"`
 	Y int64 `json:"y"`
@@ -158,5 +203,20 @@ type ScalarMulTestData struct {
 type ScalarMulTest struct {
 	P PointCoords `json:"P"`
 	K int64       `json:"k"`
+	R PointCoords `json:"R"`
+}
+
+type CombinedScalarTestData struct {
+	P     int64                `json:"p"`
+	A     int64                `json:"a"`
+	B     int64                `json:"b"`
+	Tests []CombinedScalarTest `json:"tests"`
+}
+
+type CombinedScalarTest struct {
+	P PointCoords `json:"P"`
+	K int64       `json:"k"`
+	Q PointCoords `json:"Q"`
+	U int64       `json:"u"`
 	R PointCoords `json:"R"`
 }
