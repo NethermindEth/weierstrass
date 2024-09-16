@@ -31,7 +31,7 @@ func TestIsPointOnCurve(t *testing.T) {
 	for i, point := range curveData.PointsOnCurve {
 		p := weierstrass.NewPoint(big.NewInt(point.X), big.NewInt(point.Y))
 
-		if !curve.IsPointOnCurve(p) {
+		if !curve.IsOnCurve(p) {
 			t.Errorf("Point %d (%d, %d) is not on the curve", i, point.X, point.Y)
 		}
 	}
@@ -39,7 +39,7 @@ func TestIsPointOnCurve(t *testing.T) {
 	for i, point := range curveData.PointsNotOnCurve {
 		p := weierstrass.NewPoint(big.NewInt(point.X), big.NewInt(point.Y))
 
-		if curve.IsPointOnCurve(p) {
+		if curve.IsOnCurve(p) {
 			t.Errorf("Point %d (%d, %d) is on the curve", i, point.X, point.Y)
 		}
 	}
@@ -69,7 +69,7 @@ func TestPointAddition(t *testing.T) {
 		Q := weierstrass.NewPoint(big.NewInt(test.Q.X), big.NewInt(test.Q.Y))
 		expectedR := weierstrass.NewPoint(big.NewInt(test.R.X), big.NewInt(test.R.Y))
 
-		calculatedR := curve.AddPoints(P, Q)
+		calculatedR := curve.Add(P, Q)
 
 		// Compare calculated R with expected R
 		if !calculatedR.Eq(expectedR) {
@@ -109,7 +109,7 @@ func TestScalarMultiplication(t *testing.T) {
 		expectedR := weierstrass.NewPoint(big.NewInt(test.R.X), big.NewInt(test.R.Y))
 
 		// Perform scalar multiplication using your implementation
-		calculatedR := curve.ScalarMulPoint(P, k)
+		calculatedR := curve.ScalarMul(P, k)
 
 		// Compare calculated R with expected R
 		if !expectedR.Eq(calculatedR) {
