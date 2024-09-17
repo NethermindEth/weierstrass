@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mralj/weierstrass"
+	"github.com/NethermindEth/weierstrass"
 )
 
 func TestIsPointOnCurve(t *testing.T) {
