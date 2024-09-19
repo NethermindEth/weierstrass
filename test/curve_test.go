@@ -152,7 +152,7 @@ func TestScalarMulAddPoints(t *testing.T) {
 		u := big.NewInt(test.U)
 
 		// Perform combined scalar multiplication and addition using your implementation
-		calculatedR := curve.ScalarMulAddPoints(P, Q, k, u)
+		calculatedR := curve.ScalarMulAdd(P, Q, k, u)
 
 		// Compare calculated R with expected R
 		if !expectedR.Eq(calculatedR) {
